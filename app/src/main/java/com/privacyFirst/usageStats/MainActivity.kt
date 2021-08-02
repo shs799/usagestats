@@ -16,6 +16,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.text.ParseException
 import java.text.SimpleDateFormat
@@ -28,10 +29,6 @@ class MainActivity : AppCompatActivity() {
 
     private val itemsList = ArrayList<PackageValue>()
     private lateinit var customAdapter: CustomAdapter
-    //private var startTime: Long = 0
-    //private var endTime: Long = 0
-    //private val onlyOneDialog = ReentrantLock()
-    //private var onlyOneDialogAtom = false
     private val onlyOneDialog=AtomicBoolean()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -160,12 +157,12 @@ class MainActivity : AppCompatActivity() {
             sb1.append("packageName:" + ua.packageName + "\n")
             sb1.append("firstTimeStamp:" + DateTrans.transDate(ua.firstTimeStamp) + "\n")
             sb1.append("lastTimeStamp:" + DateTrans.transDate(ua.lastTimeStamp) + "\n")
-            sb1.append("lastTimeUsed:" + DateTrans.transDate(DateTrans.transDateFilter(ua.firstTimeStamp,ua.lastTimeUsed)) + "\n")
+            sb1.append("lastTimeUsed:" + DateTrans.transDateFilter(ua.firstTimeStamp,ua.lastTimeUsed) + "\n")
             sb1.append("totalTimeInForeground:" + DateTrans.transTime(ua.totalTimeInForeground) + "\n")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                sb1.append("totalTimeForegroundServiceUsed:" + DateTrans.transDate(DateTrans.transDateFilter(ua.firstTimeStamp,ua.totalTimeForegroundServiceUsed)) + "\n")
-                sb1.append("lastTimeVisible:" + DateTrans.transDate(ua.lastTimeVisible) + "\n")
-                sb1.append("lastTimeForegroundServiceUsed:" + DateTrans.transDate(DateTrans.transDateFilter(ua.firstTimeStamp,ua.lastTimeForegroundServiceUsed)) + "\n")
+                sb1.append("totalTimeForegroundServiceUsed:" +DateTrans.transDateFilter(ua.firstTimeStamp,ua.totalTimeForegroundServiceUsed) + "\n")
+                sb1.append("lastTimeVisible:" +  (DateTrans.transTime(ua.lastTimeVisible)) + "\n")
+                sb1.append("lastTimeForegroundServiceUsed:" + DateTrans.transDateFilter(ua.firstTimeStamp,ua.lastTimeForegroundServiceUsed) + "\n")
                 sb1.append("totalTimeVisible:" + DateTrans.transTime(ua.totalTimeVisible) + "\n")
             }
             MaterialAlertDialogBuilder(view.context)
