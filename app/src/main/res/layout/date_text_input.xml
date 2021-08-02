@@ -13,7 +13,7 @@
         android:hint="string-title">
 
         <com.google.android.material.textfield.TextInputEditText
-            android:id="@android:id/text1"
+            android:id="@+id/text_input"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="1970-01-01 00:00:00::000 +0000|9999-12-31 23:59:59::999 +0000"
