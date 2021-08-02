@@ -8,8 +8,8 @@ android {
     buildToolsVersion "31.0.0"
 
     defaultConfig {
-        applicationId "com.example.myapplication"
-        minSdkVersion 22
+        applicationId "com.privacyFirst.usageStats"
+        minSdkVersion 21
         targetSdkVersion 30
         versionCode 1
         versionName "1.0"
