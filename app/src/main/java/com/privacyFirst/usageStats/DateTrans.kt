@@ -4,11 +4,14 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 object DateTrans {
-    fun transDateFilter(first: Long, target: Long): Long {
-        if ((first%(24*60*60*1000))==target){
-            return 0
+    fun transDateFilter(first: Long, target: Long): String {
+        if(target<24*60*60*1000){
+            return transDate(target+first)
         }
-        return target
+        /*if ((first%(24*60*60*1000))==target){
+            return 0
+        }*/
+        return transDate(target)
     }
     fun transDate(currentTimeMillis: Long): String {
         return if (currentTimeMillis == 0L) ""
