@@ -3,19 +3,60 @@ plugins {
     id 'kotlin-android'
 }
 
-android {
-    compileSdkVersion 30
-    buildToolsVersion "30.0.3"
+//setting start
+def stableJDK=JavaVersion.VERSION_11
+def stableBuildToolsV="30.0.3"
 
+def canaryJDK=JavaVersion.VERSION_15
+def canaryBuildToolsV="31.0.0"
+
+def customVersionName = "1.3"
+
+def isCanary=false
+//setting end
+
+
+def stable=[
+        sourceCompatibility:stableJDK,
+        targetCompatibility:stableJDK,
+        jvmTarget:String.valueOf(stableJDK.ordinal()),
+        compileSdk:Integer.valueOf(stableBuildToolsV.split("\\.")[0]),
+        buildToolsVersion:stableBuildToolsV,
+        targetSdk:Integer.valueOf(stableBuildToolsV.split("\\.")[0])
+]
+def canary=[
+        sourceCompatibility:stableJDK,
+        targetCompatibility:canaryJDK,
+        jvmTarget:String.valueOf(canaryJDK.ordinal()),
+        compileSdk:Integer.valueOf(canaryBuildToolsV.split("\\.")[0]),
+        buildToolsVersion:canaryBuildToolsV,
+        targetSdk:Integer.valueOf(canaryBuildToolsV.split("\\.")[0])
+]
+
+def current=(isCanary==true)?canary:stable
+/*applicationVariants.all { variant ->
+    buildType = variant.buildType.name // sets the current build type
+}*/
+
+
+android {
+    compileSdk current.compileSdk
+    buildToolsVersion current.buildToolsVersion
     defaultConfig {
         applicationId "com.privacyFirst.usageStats"
-        minSdkVersion 21
-        targetSdkVersion 30
-        versionCode 1
-        versionName "1.2"
+        minSdk 21
+        targetSdk current.targetSdk
+        versionCode Integer.valueOf(customVersionName.split("\\.")[0])
+        versionName customVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-
+    compileOptions {
+        sourceCompatibility current.sourceCompatibility
+        targetCompatibility current.targetCompatibility
+    }
+    kotlinOptions {
+        jvmTarget = current.jvmTarget
+    }
     buildTypes {
         release {
             minifyEnabled true
@@ -26,17 +67,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
-    }
-    kotlinOptions {
-        jvmTarget = '11'
-    }
 }
 
 dependencies {
-
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     implementation 'androidx.core:core-ktx:1.6.0'
     implementation 'androidx.appcompat:appcompat:1.3.1'
@@ -45,4 +79,6 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
 }
