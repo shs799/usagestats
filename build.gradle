@@ -5,7 +5,7 @@ buildscript {
         mavenLocal()
         //maven { url 'https://maven.aliyun.com/nexus/content/groups/public/' }
         maven { url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public/' }
-        maven { url 'https://mirrors.163.com/maven/repository/maven-public/' }
+        //maven { url 'https://mirrors.163.com/maven/repository/maven-public/' }
         maven { url 'https://repo.huaweicloud.com/apache/maven/maven-3/' }
         maven { url 'https://repo.huaweicloud.com/kunpeng/maven/' }
         maven { url 'https://mirrors.huaweicloud.com/apache/maven/maven-3/' }
@@ -40,7 +40,7 @@ allprojects {
         mavenLocal()
         //maven { url 'https://maven.aliyun.com/nexus/content/groups/public/' }
         maven { url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public/' }
-        maven { url 'https://mirrors.163.com/maven/repository/maven-public/' }
+        //maven { url 'https://mirrors.163.com/maven/repository/maven-public/' }
         maven { url 'https://repo.huaweicloud.com/apache/maven/maven-3/' }
         maven { url 'https://maven.aliyun.com/repository/central' }
         maven { url 'https://maven.aliyun.com/repository/public' }
