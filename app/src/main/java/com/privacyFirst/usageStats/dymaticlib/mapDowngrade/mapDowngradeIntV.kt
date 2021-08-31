@@ -1,13 +1,13 @@
-package com.privacyFirst.usageStats.staticlib.mapDowngrade
+package com.privacyFirst.usageStats.dymaticlib.mapDowngrade
 
-import com.privacyFirst.usageStats.staticlib.map.IntVMapC
+import com.privacyFirst.usageStats.dymaticlib.map.IntVMapC
 import java.util.concurrent.atomic.AtomicReference
 
 /* It can convert map to ArrayMap to decrease memory-usage.
  * get value is available when converting.
  * writing map will wait until convert finish.
  *
- * Run everywhere
+ * Android Only
  */
 
 //warning: Thread not-safe

@@ -34,9 +34,7 @@ import java.util.concurrent.ConcurrentSkipListMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
-//replace everywhere with android
-import com.privacyFirst.usageStats.staticlib.mapDowngrade.MapDowngradeIntV
-import com.privacyFirst.usageStats.staticlib.mapDowngrade.MapDowngradeKV
+import com.privacyFirst.usageStats.dymaticlib.mapDowngrade.MapDowngradeIntV
 
 
 class MainActivity : AppCompatActivity() {
