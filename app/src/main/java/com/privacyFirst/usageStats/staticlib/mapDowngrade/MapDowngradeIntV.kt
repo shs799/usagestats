@@ -1,5 +1,6 @@
-package com.privacyFirst.usageStats.staticlib.method
+package com.privacyFirst.usageStats.staticlib.mapDowngrade
 
+import com.privacyFirst.usageStats.staticlib.map.IntVMapC
 import java.util.concurrent.atomic.AtomicReference
 
 /* It can convert map to ArrayMap to decrease memory-usage.
@@ -11,7 +12,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 //warning: Thread not-safe
 class MapDowngradeIntV< V>() : Map<Int, V> {
-    private var a : MutableMap<Int, V>?=null
+    private val a = AtomicReference<MutableMap<Int, V>>()
 
     private var removeSource = false
     private var thread: Thread? = null
@@ -24,12 +25,13 @@ class MapDowngradeIntV< V>() : Map<Int, V> {
         this.removeSource = removeSource
     }
 
-    private fun resetMap(mc: MutableMap<Int, V>) {
-        a=mc
+    fun resetMap(mc: MutableMap<Int, V>) {
+        a.set(mc)
         val t = Thread {
-            val am = android.util.ArrayMap<Int, V>(mc.size)
+            val am = IntVMapC<V>(mc.size)
             am.putAll(mc)
-            a=am
+            a.compareAndSet(mc, am)
+
             if (removeSource)
                 mc.clear()
         }
@@ -40,35 +42,43 @@ class MapDowngradeIntV< V>() : Map<Int, V> {
 
     }
 
-    fun getMap(): MutableMap<Int, V> {
+    private fun join() {
         thread?.join()
-        return a!!
     }
 
+    private fun getMap(): MutableMap<Int, V> {
+        return a.get()
+    }
 
     override val size: Int
-        get() = a!!.size
+        get() = getMap().size
 
     override fun containsKey(key: Int) =
-        a!!.containsKey(key)
+        getMap().containsKey(key)
 
 
-    override fun containsValue(value: V) = a!!.containsValue(value)
+    override fun containsValue(value: V) = getMap().containsValue(value)
 
 
-    override fun get(key: Int): V? = a!![key]
+    override fun get(key: Int): V? = getMap()[key]
 
 
-    override fun isEmpty() = a!!.isEmpty()
+    override fun isEmpty() = getMap().isEmpty()
 
-    override val entries =
-        a!!.entries
+    override val entries: Set<Map.Entry<Int, V>>
+        get() {
 
-    override val keys =
-        a!!.keys
+            return getMap().entries
+        }
 
-    override val values =
-        a!!.values
+    override val keys: Set<Int>
+        get() {
 
+            return getMap().keys
+        }
+    override val values: Collection<V>
+        get() {
 
+            return getMap().values
+        }
 }

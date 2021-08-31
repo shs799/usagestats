@@ -1,4 +1,4 @@
-package com.privacyFirst.usageStats.staticlib.staticm
+package com.privacyFirst.usageStats.staticlib.date
 
 import java.text.SimpleDateFormat
 import java.util.*

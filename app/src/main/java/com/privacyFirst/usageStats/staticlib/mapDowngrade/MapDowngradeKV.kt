@@ -1,4 +1,4 @@
-package com.privacyFirst.usageStats.staticlib.method
+package com.privacyFirst.usageStats.staticlib.mapDowngrade
 
 
 /* It can convert map to ArrayMap to decrease memory-usage.

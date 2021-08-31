@@ -8,10 +8,14 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.ArrayMap
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
+import android.widget.AdapterView
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.annotation.NonNull
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -22,28 +26,38 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.privacyFirst.usageStats.CustomAdapter.OnItemClickListener
-import com.privacyFirst.usageStats.staticMethod.DateToday
-import com.privacyFirst.usageStats.staticMethod.DateTrans
-import com.privacyFirst.usageStats.staticMethod.StripString
-import java.lang.reflect.Field
-import java.util.concurrent.ConcurrentLinkedQueue
+import com.privacyFirst.usageStats.staticlib.date.DateToday
+import com.privacyFirst.usageStats.staticlib.date.DateTrans
+import com.privacyFirst.usageStats.staticlib.string.StripString
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentSkipListMap
-import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.collections.ArrayList
+import java.util.concurrent.atomic.AtomicInteger
+
+//replace everywhere with android
+import com.privacyFirst.usageStats.staticlib.mapDowngrade.MapDowngradeIntV
+import com.privacyFirst.usageStats.staticlib.mapDowngrade.MapDowngradeKV
 
 
 class MainActivity : AppCompatActivity() {
-    private val itemsList = ArrayList<PackageValue>()
-    private val customAdapter: CustomAdapter = CustomAdapter(itemsList)
+    private var itemsListMap  = MapDowngradeIntV< PackageValue>()
+
     private val onlyOneDialog = AtomicBoolean()
 
-    //order:todayInUtcMilliseconds choices
+    private var clickeditem: Int = 0
+
+    private val dateTrans= DateTrans
+
+    //order:1->maxwidth, 2->customAdapter
+    //private val maxwidth = AtomicInteger()//not atomic operation just save a value
+    private val customAdapter = CustomAdapter(itemsListMap)
+
+    //order:1->todayInUtcMilliseconds, 2->choices
     private var todayInUtcMilliseconds: Long = DateToday.todayInUtcMilliseconds()
     private val choices: Array<String> = Array(10) { i ->
         forEachChoice(i)
     }
-    private var appIconWidth: Int = 0
+
 
     private fun forEachChoice(i: Int): String {
         /*10 is mean
@@ -55,7 +69,7 @@ class MainActivity : AppCompatActivity() {
             8 -> return "month_range$ap"
             9 -> return "year_range$ap"
         }
-        return DateTrans.dateStamp(todayInUtcMilliseconds - i * 24 * 60 * 60 * 1000)
+        return dateTrans.dateStamp(todayInUtcMilliseconds - i * 24 * 60 * 60 * 1000)
     }
 
     private fun flushChoice() {
@@ -69,20 +83,17 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        title = "UsageStats"
+        title = "AppUsage"
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
         val layoutManager = LinearLayoutManager(applicationContext)
         recyclerView.layoutManager = layoutManager
 
-        customAdapter.run {
-            recyclerView.layoutManager = layoutManager
+        customAdapter.setOnItemClickListener(object : OnItemClickListener {
+            override fun onItemClick(view: View, position: Int) {
+                myItemClick(view, position)
+            }
+        })
 
-            setOnItemClickListener(object : OnItemClickListener {
-                override fun onItemClick(view: View, position: Int) {
-                    myItemClick(view, position)
-                }
-            })
-        }
         recyclerView.adapter = customAdapter
 
         val button = findViewById<FloatingActionButton>(R.id.floating_action_button)
@@ -99,7 +110,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refreshItem(intervalType: Int, sTime: Long, eTime: Long, snakeBarView: View) {
-        itemsList.clear()
+
         val mUsageStatsManager =
             getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager
         val queryUsageStats =
@@ -111,7 +122,7 @@ class MainActivity : AppCompatActivity() {
              */
             if (intervalType in 1..3)
                 choices[6 + intervalType] =
-                    "From " + DateTrans.stamp(queryUsageStats[0].firstTimeStamp)
+                    "From " + dateTrans.stamp(queryUsageStats[0].firstTimeStamp)
         } else {
             Snackbar.make(snakeBarView, "No data", Snackbar.LENGTH_LONG)
                 .setAction("Set permission") {
@@ -120,9 +131,11 @@ class MainActivity : AppCompatActivity() {
                 }
                 .show()
         }
-        val writeList = ConcurrentLinkedQueue<PackageValue>()
-        val set = ConcurrentSkipListSet<Int>()
-        queryUsageStats.parallelStream().forEach { usageStats ->
+        val a = AtomicInteger()
+        val writeMap = ConcurrentHashMap<Int, PackageValue>()
+        queryUsageStats.parallelStream().filter { i ->
+            !(i.lastTimeUsed / (24 * 60 * 60 * 1000) == 0L && i.totalTimeInForeground == 0L)
+        }.forEach { usageStats ->
             val appInfo = try {
                 packageManager.getApplicationInfo(
                     usageStats.packageName, PackageManager.GET_META_DATA
@@ -132,28 +145,35 @@ class MainActivity : AppCompatActivity() {
             }
             if (appInfo == null) {
                 val value = PackageValue("-uninstalled-", usageStats)
-                writeList.add(value)
+                writeMap[a.getAndIncrement()] = value
             } else {
                 val appName = appInfo.loadLabel(packageManager).toString()
                 val i = appInfo.loadIcon(packageManager)
-                set.add(i.minimumWidth)
+
+                /*if (appInfo.packageName == packageName) {
+                    maxwidth.set(i.minimumWidth)
+                }*/
+
+                //set.add(i.minimumWidth)
                 val st = StripString.strip(Pair(appName, usageStats.packageName))
                 val value = if (st.first == "") PackageValue(usageStats.packageName, usageStats, i)
                 else PackageValue(StripString.stripDot(st.first), usageStats, i)
-                writeList.add(value)
+                writeMap[a.getAndIncrement()] = value
             }
         }
-        appIconWidth = set.parallelStream().mapToInt { i -> i }.min().asInt
-        itemsList.addAll(writeList)
+        //appIconWidth = set.parallelStream().mapToInt { i -> i }.min().asInt
+        //val map = TransData.listToMap(writeList)
+        itemsListMap.resetMap(writeMap)
         customAdapter.notifyDataSetChanged()
     }
+
 
     private fun onChangeClick(view: View) {
         val tmpV = onlyOneDialog.getAndSet(true)
         if (!tmpV) {
             MaterialAlertDialogBuilder(view.context)
                 .setTitle("Set range")
-                .setSingleChoiceItems(choices, 1, null)
+                .setSingleChoiceItems(choices, clickeditem, null)
                 .setOnCancelListener {
                     onlyOneDialog.set(false)
                 }
@@ -162,13 +182,14 @@ class MainActivity : AppCompatActivity() {
                 }
                 .setPositiveButton("apply&flush") { dialog, _ ->
                     val checkedItemPosition = (dialog as AlertDialog).listView.checkedItemPosition
+                    clickeditem = checkedItemPosition
                     if (checkedItemPosition != AdapterView.INVALID_POSITION) {
                         flushChoice()
                         if (checkedItemPosition in 0..6) {
                             val sTime =
-                                todayInUtcMilliseconds - (checkedItemPosition) * 24 * 60 * 60 * 1000
+                                todayInUtcMilliseconds - (checkedItemPosition) * 24 * 60 * 60 * 1000+1
                             val eTime =
-                                todayInUtcMilliseconds - (checkedItemPosition - 1) * 24 * 60 * 60 * 1000 - 1
+                                todayInUtcMilliseconds - (checkedItemPosition - 1) * 24 * 60 * 60 * 1000 - 2
                             refreshItem(UsageStatsManager.INTERVAL_DAILY, sTime, eTime, view)
                         } else {
                             val sTime = todayInUtcMilliseconds - 24 * 60 * 60 * 1000
@@ -197,30 +218,31 @@ class MainActivity : AppCompatActivity() {
     private fun myItemClick(view: View, position: Int) {
         val tmpV = onlyOneDialog.getAndSet(true)
         if (!tmpV) {
-            val sb1 = StringBuilder(1 shl 9)//512
-            val ua = itemsList[position].usageStats
+            val t = itemsListMap[position]!!
+            val sb1 = StringBuilder(128)
+            val ua = t.usageStats
             sb1.append("packageName:" + ua.packageName + "\n")
-            sb1.append("firstTimeStamp:" + DateTrans.stamp(ua.firstTimeStamp) + "\n")
-            sb1.append("lastTimeStamp:" + DateTrans.stamp(ua.lastTimeStamp) + "\n")
+            sb1.append("firstTimeStamp:" + dateTrans.stamp(ua.firstTimeStamp) + "\n")
+            sb1.append("lastTimeStamp:" + dateTrans.stamp(ua.lastTimeStamp) + "\n")
             sb1.append(
-                "lastTimeUsed:" + DateTrans.dateFilter(
+                "lastTimeUsed:" + dateTrans.dateFilter(
                     ua.lastTimeUsed
                 ) + "\n"
             )
-            sb1.append("totalTimeInForeground:" + DateTrans.time(ua.totalTimeInForeground) + "\n")
+            sb1.append("totalTimeInForeground:" + dateTrans.time(ua.totalTimeInForeground) + "\n")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 sb1.append(
-                    "totalTimeForegroundServiceUsed:" + DateTrans.dateFilter(
+                    "totalTimeForegroundServiceUsed:" + dateTrans.dateFilter(
                         ua.totalTimeForegroundServiceUsed
                     ) + "\n"
                 )
-                sb1.append("lastTimeVisible:" + (DateTrans.time(ua.lastTimeVisible)) + "\n")
+                sb1.append("lastTimeVisible:" + (dateTrans.time(ua.lastTimeVisible)) + "\n")
                 sb1.append(
-                    "lastTimeForegroundServiceUsed:" + DateTrans.dateFilter(
+                    "lastTimeForegroundServiceUsed:" + dateTrans.dateFilter(
                         ua.lastTimeForegroundServiceUsed
                     ) + "\n"
                 )
-                sb1.append("totalTimeVisible:" + DateTrans.time(ua.totalTimeVisible) + "\n")
+                sb1.append("totalTimeVisible:" + dateTrans.time(ua.totalTimeVisible) + "\n")
             }
 
             val blockListFieldsName = listOf(
@@ -243,33 +265,33 @@ class MainActivity : AppCompatActivity() {
             val nullValue = listOf("{}", "0")
 
             val cm = ConcurrentSkipListMap<String, String>()//key value
-            ua.javaClass.declaredFields.toList().parallelStream()
-                .forEach(fun(i: Field) {
+            ua.javaClass.declaredFields.toList().parallelStream().filter { i ->
+                !blockListFieldsName.contains(i.name)
+            }
+                .forEach { i ->
                     i.isAccessible = true
                     val get = i.get(ua)
-                    if (!blockListFieldsName.contains(i.name)) {
-                        //typeName:API limit about typeName is a bug, we should not care about it.
-                        val v =
-                            if (i.name.contains("TimeUsed") && i.genericType.typeName == "long") {
-                                if (get != null) DateTrans.dateFilter(
-                                    get.toString().toLong()
-                                ) else "null"
-                            } else if (i.name.contains("Time") && i.genericType.typeName == "long") {
-                                if (get != null) DateTrans.time(get.toString().toLong()) else "null"
-                            } else {
-                                get?.toString() ?: "null"
-                            }
-                        if (!nullValue.contains(v))
-                            cm[i.name] = v
-                    }
+                    val v =
+                        if (i.name.contains("TimeUsed") && i.genericType.typeName == "long") {
+                            if (get != null) dateTrans.dateFilter(
+                                get.toString().toLong()
+                            ) else "null"
+                        } else if (i.name.contains("Time") && i.genericType.typeName == "long") {
+                            if (get != null) dateTrans.time(get.toString().toLong()) else "null"
+                        } else {
+                            get?.toString() ?: "null"
+                        }
+                    if (!nullValue.contains(v))
+                        cm[i.name] = v
+
                     i.isAccessible = false
-                })
+                }
 
             cm.forEach { (k, v) ->
                 sb1.append("#$k:$v\n")
             }
             MaterialAlertDialogBuilder(view.context)
-                .setTitle(ua.packageName)
+                .setTitle(t.appLabel)
                 .setMessage(sb1.toString())
                 .setNegativeButton("Cancel") { _, _ ->
                     onlyOneDialog.set(false)
@@ -303,15 +325,13 @@ private class PackageValue {
     }
 }
 
-private class CustomAdapter(private var itemsList: ArrayList<PackageValue>) :
+private class CustomAdapter(
+    private val itemsList: MapDowngradeIntV<PackageValue>,
+    //private val maxWidth: AtomicInteger,
+) :
     RecyclerView.Adapter<CustomAdapter.MyViewHolder>() {
 
     private var mOnItemClickListener: OnItemClickListener? = null
-    private var mappIconWidth: Int = 0
-        get() = field
-        set(value) {
-            field = value
-        }
 
     inner class MyViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val itemTextView: TextView = view.findViewById(R.id.itemTextView)
@@ -338,7 +358,7 @@ private class CustomAdapter(private var itemsList: ArrayList<PackageValue>) :
     }
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
-        val custom = itemsList[position]
+        val custom = itemsList[position]!!
         holder.cardView.setOnClickListener { view ->
             mOnItemClickListener?.onItemClick(
                 view,
@@ -349,7 +369,10 @@ private class CustomAdapter(private var itemsList: ArrayList<PackageValue>) :
         val p = StripString.strip(Pair(custom.appLabel, custom.usageStats.packageName))
         holder.itemTextView2.text = StripString.stripDot(p.second)
         holder.appIcon.setImageDrawable(custom.appIcon)
-        //holder.appIcon.maxWidth = mappIconWidth//toDo:change
+
+        /*if(maxWidth.get()!=0){
+            holder.appIcon.maxWidth=maxWidth.get()
+        }*/
     }
 
     override fun getItemCount(): Int {

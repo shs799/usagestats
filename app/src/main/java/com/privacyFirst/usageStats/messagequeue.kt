@@ -2,7 +2,7 @@ package com.privacyFirst.usageStats
 
 import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
-import com.privacyFirst.usageStats.staticMethod.DateToday
+import com.privacyFirst.usageStats.staticlib.date.DateToday
 import java.util.concurrent.atomic.AtomicReference
 
 class Background {

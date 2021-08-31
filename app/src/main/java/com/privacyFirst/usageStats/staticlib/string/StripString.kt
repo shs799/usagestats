@@ -1,4 +1,4 @@
-package com.privacyFirst.usageStats.staticlib.staticm
+package com.privacyFirst.usageStats.staticlib.string
 
 import kotlin.math.min
 
