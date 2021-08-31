@@ -1,4 +1,4 @@
-package com.privacyFirst.usageStats.staticMethod
+package com.privacyFirst.usageStats.staticlib.staticm
 
 object DateToday {
     fun todayInUtcMilliseconds():Long{
