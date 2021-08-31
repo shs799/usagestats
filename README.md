@@ -28,3 +28,38 @@ We think if applicationlication can access important privacy information, it sho
 This applicationlication has **NO-ACCESS-INTERNET-PERMISSION**, **NO-ADVERTISEMENT**, **NO IN-application-PURCHASES**.
 
 It is OPEN-SOURCE. Pull-request are welcome.
+
+# Interesting component
+
+### IntVMap
+
+IntVMap is a Integer-to-Object-Map based on SparseArrayCompat. It implemented the MutableMap interface, So you can downgrade to SparseArrayCompat faster. 
+It is based on AndroidX package, so it can run everywhere.
+
+**Iot of bug exist**. Reporting are welcome.
+
+```kotlin
+//downgrade tutorial from ArrayMap to IntVMap
+//from:
+val map:MutableMap<Int,V>=ArrayMap<Int,V>()
+//to:
+val map:MutableMap<Int,V>=IntVMap<V>()
+
+//bind exist SparseArrayCompat to MutableMap
+val sparseArrayCompat=SparseArrayCompat()
+val map:MutableMap<Int,V>=IntVMap<V>(sparseArrayCompat)
+```
+
+### MapDowngrade
+
+Before:
+
+1. Parallel compute in ConcurrentMap.
+2. PutAll to a slim-Map such as ArrayMap.(It is too slow)
+3. Get or Put.
+
+After:
+
+1. Parallel compute in ConcurrentMap.
+2. PutAll to a slim-Map such as ArrayMap. (when transfering, read operation is available,but write operation will wait after transfer finish.)
+3. Get or Put.
