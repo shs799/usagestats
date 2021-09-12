@@ -21,10 +21,10 @@ class MapDowngradeKV<K, V>() : Map<K, V> {
         this.removeSource = removeSource
     }
 
-    private fun resetMap(mc: MutableMap<K, V>) {
+    fun resetMap(mc: MutableMap<K, V>) {
         a=mc
         val t = Thread {
-            val am = android.util.ArrayMap<K, V>(mc.size)
+            val am = HashMap<K, V>(mc.size)
             am.putAll(mc)
             a=am
             if (removeSource)

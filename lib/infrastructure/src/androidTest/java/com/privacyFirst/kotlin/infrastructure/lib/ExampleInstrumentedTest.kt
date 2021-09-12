@@ -1,7 +1,5 @@
-package com.privacyFirst.usageStats
+package com.privacyFirst.kotlin.infrastructure.lib
 
-import android.app.usage.UsageStatsManager
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
 
@@ -21,6 +19,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("com.privacyFirst.usageStats", appContext.packageName)
+        assertEquals("com.kotlin.infrastructure.lib.test", appContext.packageName)
     }
 }

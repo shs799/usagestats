@@ -1,0 +1,139 @@
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+    id 'jacoco'
+}
+apply plugin: 'de.mobilej.unmock'
+apply plugin: 'kotlin-android'
+//apply plugin: 'com.vanniktech.android.junit.jacoco'
+
+jacoco {
+    toolVersion = "0.8.7"
+    reportsDirectory = layout.buildDirectory.dir("$buildDir/jacoco-reports/jacoco")
+}
+
+//setting start
+def stableJDK = JavaVersion.VERSION_11
+def stableBuildToolsV = "30.0.3"
+
+def canaryJDK = JavaVersion.VERSION_13
+def canaryBuildToolsV = "31.0.0"
+
+def customVersionName = "1"
+
+def isCanaryVersion = enable_canary
+def BuildToolsWithSourceCode = enable_buildwithsourcecode
+
+//setting end
+
+def stableBT = [
+        buildToolsVersion: stableBuildToolsV,
+        compileSdk       : Integer.valueOf(stableBuildToolsV.split("\\.")[0])
+]
+def canaryBT = [
+        buildToolsVersion: canaryBuildToolsV,
+        compileSdk       : Integer.valueOf(canaryBuildToolsV.split("\\.")[0])
+]
+
+def stable = [
+        targetSdk          : Integer.valueOf(stableBuildToolsV.split("\\.")[0]),
+
+        sourceCompatibility: stableJDK,
+        targetCompatibility: stableJDK,
+        jvmTarget          : String.valueOf(stableJDK.ordinal()+1),
+        versionName        : customVersionName + " stable",
+        //ver                : "latest.release"
+]
+def canary = [
+        targetSdk          : Integer.valueOf(canaryBuildToolsV.split("\\.")[0]),
+        sourceCompatibility: stableJDK,
+        targetCompatibility: canaryJDK,
+        jvmTarget          : String.valueOf(canaryJDK.ordinal()+1),
+        versionName        : customVersionName + " canary",
+        //ver                : "latest.integration"
+]
+
+def currentBT = !BuildToolsWithSourceCode ? canaryBT : stableBT
+def current = isCanaryVersion ? canary : stable
+
+
+android {
+    compileSdkVersion currentBT.compileSdk
+    buildToolsVersion currentBT.buildToolsVersion
+    defaultConfig {
+        minSdk 16
+        targetSdk current.targetSdk
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles "consumer-rules.pro"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            zipAlignEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            testCoverageEnabled true
+            minifyEnabled false
+            zipAlignEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility current.sourceCompatibility
+        targetCompatibility current.targetCompatibility
+    }
+    kotlinOptions {
+        jvmTarget = current.jvmTarget
+    }
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+}
+
+dependencies {
+
+    implementation 'androidx.core:core-ktx:1.6.0'
+    implementation 'androidx.appcompat:appcompat:1.3.1'
+    implementation 'com.google.android.material:material:1.4.0'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+    //testImplementation 'org.robolectric:robolectric:4.6.1'
+    unmock 'org.robolectric:android-all:4.3_r2-robolectric-0'
+}
+
+unMock {
+    keep "android.widget.BaseAdapter"
+    keep "android.widget.ArrayAdapter"
+    keep "android.os.Bundle"
+    keepStartingWith "android.database.MatrixCursor"
+    keep "android.database.AbstractCursor"
+    keep "android.database.CrossProcessCursor"
+    keepStartingWith "android.text.TextUtils"
+    keepStartingWith "android.util."
+    keepStartingWith "android.text."
+    keepStartingWith "android.content.ContentValues"
+    keepStartingWith "android.content.ComponentName"
+    keepStartingWith "android.content.ContentUris"
+    keepStartingWith "android.content.ContentProviderOperation"
+    keepStartingWith "android.content.ContentProviderResult"
+    keepStartingWith "android.content.UriMatcher"
+    keepStartingWith "android.content.Intent"
+    keep "android.location.Location"
+    keepStartingWith "android.content.res.Configuration"
+    keepStartingWith "org."
+    keepStartingWith "libcore."
+    keepStartingWith "com.android.internal.R"
+    keepStartingWith "com.android.internal.util."
+    keep "android.net.Uri"
+
+    keepAndRename "java.nio.charset.Charsets" to "xjava.nio.charset.Charsets"
+}
+repositories {
+    mavenCentral()
+}

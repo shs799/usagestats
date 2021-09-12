@@ -1,6 +1,6 @@
-package com.privacyFirst.usageStats.staticlib.map
+package com.privacyFirst.usageStats.underconstruction
 
-class MapType {
+class NewMapType {
     private object A {
         abstract class MapA<K, V> : I.MapI<K, V> {
             /*override val entries: I.EntriesI<K, V>

@@ -1,6 +1,6 @@
 package com.privacyFirst.usageStats.staticlib.mapDowngrade
 
-import com.privacyFirst.usageStats.staticlib.map.IntVMapC
+import com.privacyFirst.kotlin.infrastructure.lib.android.IntVMap
 import java.util.concurrent.atomic.AtomicReference
 
 /* It can convert map to ArrayMap to decrease memory-usage.
@@ -28,7 +28,7 @@ class MapDowngradeIntV< V>() : Map<Int, V> {
     fun resetMap(mc: MutableMap<Int, V>) {
         a.set(mc)
         val t = Thread {
-            val am = IntVMapC<V>(mc.size)
+            val am = IntVMap<V>(mc.size)
             am.putAll(mc)
             a.compareAndSet(mc, am)
 

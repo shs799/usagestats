@@ -1,8 +1,8 @@
-package com.privacyFirst.usageStats.dymaticlib.map
+package com.privacyFirst.kotlin.infrastructure.lib.android
 
 /*
 IntVMap
-IntVMap is a Integer-to-Object-Map based on SparseArrayCompat. It implemented the MutableMap interface, So you can downgrade to SparseArrayCompat faster.
+IntVMap is a Integer-to-Object-Map based on SparseArray. It implemented the MutableMap interface, So you can downgrade to SparseArray faster.
 It is based on AndroidX package, so it can run everywhere.
 Iot of bug exist. Reporting are welcome.
 
@@ -12,21 +12,22 @@ val map:MutableMap<Int,V>=ArrayMap<Int,V>()
 //to:
 val map:MutableMap<Int,V>=IntVMap<V>()
 
-//bind exist SparseArrayCompat to MutableMap
-val sparseArrayCompat=SparseArrayCompat()
-val map:MutableMap<Int,V>=IntVMap<V>(sparseArrayCompat)
+//bind exist SparseArray to MutableMap
+val sparseArray=SparseArray()
+val map:MutableMap<Int,V>=IntVMap<V>(sparseArray)
  */
 
-//Android only
+//run everywhere
 
 //warning: Thread not-safe
+
 import android.util.SparseArray
 import androidx.core.util.containsKey
 import androidx.core.util.containsValue
 import androidx.core.util.isEmpty
 import java.util.*
 
-open class IntVMapC<V> : MutableMap<Int, V> {
+class IntVMap<V> : MutableMap<Int, V> {
     var sparseArrayCompat: SparseArray<V>
 
     constructor() {
@@ -129,37 +130,17 @@ open class IntVMapC<V> : MutableMap<Int, V> {
             "$key=$value"
     }
 
-    //private object C {
-    private class InternalNode<V>(
-        private val index: Int,
-        private val sparseArrayCompat: SparseArray<V>,
-    ) : MutableMap.MutableEntry<Int, V> {
-        override val key: Int
-            get() = sparseArrayCompat.keyAt(index)
-        override val value: V
-            get() = sparseArrayCompat.valueAt(index)
 
-        override fun setValue(newValue: V): V {
-            val old = value
-            sparseArrayCompat.setValueAt(index, newValue)
-            return old
-        }
 
-        override fun toString() = "$key=$value"
-
-    }
-
-    private class ValueIterator<V>(private var sparseArrayCompat: SparseArray<V>) :
+    class ValueIterator<V>(private var sparseArrayCompat: SparseArray<V>) :
         MutableIterator<V> {
-        private var point: Int = 0
+        private var point = 0
         private var mEntryValid = false
         override fun hasNext() =
-            point < sparseArrayCompat.size()
-
+            point+(if (mEntryValid)1 else 0) < sparseArrayCompat.size()
 
         override fun next(): V {
             if (!hasNext()) throw NoSuchElementException()
-            //do not move pointer, if remove
             if (mEntryValid) point++
             mEntryValid = true
             return sparseArrayCompat.valueAt(point)
@@ -190,16 +171,10 @@ open class IntVMapC<V> : MutableMap<Int, V> {
 
         override fun isEmpty() = sparseArrayCompat.isEmpty()
 
-        override fun iterator(): MutableIterator<V> {
-            val v1 = mIterator
-            return if (v1 == null) {
-                val v2 = ValueIterator(sparseArrayCompat)
-                mIterator = v2
-                v2
-            } else v1
+        override fun iterator(): ValueIterator<V> {
+            return ValueIterator(sparseArrayCompat)
         }
 
-        private var mIterator: MutableIterator<V>? = null
 
         @Deprecated("UnsupportedOperationException", level = DeprecationLevel.HIDDEN)
         override fun add(element: V) =
@@ -227,18 +202,17 @@ open class IntVMapC<V> : MutableMap<Int, V> {
 
     }
 
-    private class KeyIterator<V>(private var sparseArrayCompat: SparseArray<V>) :
+    class KeyIterator<V>(private var sparseArrayCompat: SparseArray<V>) :
         MutableIterator<Int> {
         private var point: Int = 0
         private var mEntryValid = false
-        override fun hasNext(): Boolean {
-            return point < sparseArrayCompat.size()
-        }
+        override fun hasNext()=
+            point+(if (mEntryValid)1 else 0) < sparseArrayCompat.size()
+
 
         override fun next(): Int {
             if (!hasNext()) throw NoSuchElementException()
-            if (!mEntryValid)
-                point++
+            if (mEntryValid) point++
             mEntryValid = true
             return sparseArrayCompat.keyAt(point)
         }
@@ -266,17 +240,10 @@ open class IntVMapC<V> : MutableMap<Int, V> {
         override fun clear() = sparseArrayCompat.clear()
 
 
-        override fun iterator(): MutableIterator<Int> {
-            val v1 = mIterator
-            return if (v1 == null) {
-                val v2 = KeyIterator(sparseArrayCompat)
-                mIterator = v2
-                v2
-            } else v1
-
+        override fun iterator(): KeyIterator<V> {
+            return KeyIterator(sparseArrayCompat)
         }
 
-        private var mIterator: MutableIterator<Int>? = null
         override fun remove(element: Int): Boolean {
             val index = sparseArrayCompat.indexOfKey(element)
             if (index >= 0) {
@@ -339,15 +306,15 @@ open class IntVMapC<V> : MutableMap<Int, V> {
     }
 
 
-    private class MapIterator<V>(private val sparseArrayCompat: SparseArray<V>) :
+    class PairIterator<V>(private val sparseArrayCompat: SparseArray<V>) :
         MutableIterator<MutableMap.MutableEntry<Int, V>> {
         private var point: Int = 0
         private var mEntryValid = false
-        override fun hasNext() = point < sparseArrayCompat.size()
+        override fun hasNext() = point+(if (mEntryValid)1 else 0) < sparseArrayCompat.size()
 
         override fun next(): MutableMap.MutableEntry<Int, V> {
             if (!hasNext()) throw NoSuchElementException()
-            if (!mEntryValid) point++
+            if (mEntryValid) point++
             mEntryValid = true
             return InternalNode(point, sparseArrayCompat)
         }
@@ -356,6 +323,22 @@ open class IntVMapC<V> : MutableMap<Int, V> {
             check(mEntryValid)
             sparseArrayCompat.removeAt(point)
             mEntryValid = false
+        }
+        private class InternalNode<V>(
+            private val index: Int,
+            private val sparseArrayCompat: SparseArray<V>,
+        ) : MutableMap.MutableEntry<Int, V> {
+            override val key: Int
+                get() = sparseArrayCompat.keyAt(index)
+            override val value: V
+                get() = sparseArrayCompat.valueAt(index)
+
+            override fun setValue(newValue: V): V {
+                val old = value
+                sparseArrayCompat.setValueAt(index, newValue)
+                return old
+            }
+            override fun toString() = "$key=$value"
         }
     }
 
@@ -386,15 +369,8 @@ open class IntVMapC<V> : MutableMap<Int, V> {
         override fun clear() = sparseArrayCompat.clear()
 
         override fun iterator(): MutableIterator<MutableMap.MutableEntry<Int, V>> {
-            val i = mIterator
-            return if (i == null) {
-                val newI = MapIterator(sparseArrayCompat)
-                mIterator = newI
-                newI
-            } else i
+            return PairIterator(sparseArrayCompat)
         }
-
-        private var mIterator: MutableIterator<MutableMap.MutableEntry<Int, V>>? = null
 
         override fun remove(element: MutableMap.MutableEntry<Int, V>): Boolean {
             val index = sparseArrayCompat.indexOfKey(element.key)
@@ -408,11 +384,10 @@ open class IntVMapC<V> : MutableMap<Int, V> {
 
         override fun removeAll(elements: Collection<MutableMap.MutableEntry<Int, V>>): Boolean {
             if (this === elements)
-                return if (sparseArrayCompat.size() != 0) {
+                return if (!sparseArrayCompat.isEmpty()) {
                     sparseArrayCompat.clear()
                     true
                 } else false
-
             var modify = false
             elements.forEach { i -> if (remove(i)) modify = true }
             return modify
@@ -468,7 +443,4 @@ open class IntVMapC<V> : MutableMap<Int, V> {
         override fun toString() = sparseArrayCompat.toString()
 
     }
-
-
-    //}
 }

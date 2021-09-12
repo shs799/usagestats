@@ -1,9 +1,11 @@
 package com.privacyFirst.usageStats.staticlib.string
 
 import kotlin.math.min
+import android.util.Pair
+
 
 object StripString {
-    fun strip(p: Pair<String, String>): Pair<String, String> {
+    fun packageNameStrip(p: Pair<String, String>): Pair<String, String> {
         val s1 = p.first
         val s2 = p.second
         val min = min(s1.length, s2.length)

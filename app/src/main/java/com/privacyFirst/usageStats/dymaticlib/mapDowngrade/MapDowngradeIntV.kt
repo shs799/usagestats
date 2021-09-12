@@ -1,6 +1,6 @@
 package com.privacyFirst.usageStats.dymaticlib.mapDowngrade
 
-import com.privacyFirst.usageStats.dymaticlib.map.IntVMapC
+import com.privacyFirst.kotlin.infrastructure.lib.android.IntVMap
 import java.util.concurrent.atomic.AtomicReference
 
 /* It can convert map to ArrayMap to decrease memory-usage.
@@ -11,11 +11,15 @@ import java.util.concurrent.atomic.AtomicReference
  */
 
 //warning: Thread not-safe
-class MapDowngradeIntV< V>() : Map<Int, V> {
+class MapDowngradeIntV< V> : Map<Int, V> {
     private val a = AtomicReference<MutableMap<Int, V>>()
 
     private var removeSource = false
     private var thread: Thread? = null
+
+    constructor(){
+        a.set(IntVMap())
+    }
 
     constructor(from: MutableMap<Int, V>) : this() {
         resetMap(from)
@@ -28,7 +32,7 @@ class MapDowngradeIntV< V>() : Map<Int, V> {
     fun resetMap(mc: MutableMap<Int, V>) {
         a.set(mc)
         val t = Thread {
-            val am = IntVMapC<V>(mc.size)
+            val am = IntVMap<V>(mc.size)
             am.putAll(mc)
             a.compareAndSet(mc, am)
 
@@ -46,7 +50,7 @@ class MapDowngradeIntV< V>() : Map<Int, V> {
         thread?.join()
     }
 
-    private fun getMap(): MutableMap<Int, V> {
+     fun getMap(): MutableMap<Int, V> {
         return a.get()
     }
 
