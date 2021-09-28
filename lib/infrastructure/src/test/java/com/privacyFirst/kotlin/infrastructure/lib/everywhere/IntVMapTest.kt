@@ -17,11 +17,8 @@ package com.privacyFirst.kotlin.infrastructure.lib.everywhere
  */
 
 
-import com.privacyFirst.kotlin.infrastructure.lib.android.IntVMap
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertSame
-import org.junit.Assert.assertTrue
+import com.privacyFirst.kotlin.infrastructure.lib.android.collection.IntVMap
+import org.junit.Assert.*
 import org.junit.Test
 
 class IntVMapTest {
@@ -29,31 +26,31 @@ class IntVMapTest {
     @Test fun sizeProperty() {
         val array = IntVMap<String>()
         assertEquals(0, array.size)
-        array.put(1, "one")
+        array[1]="one"
         assertEquals(1, array.size)
     }
 
     @Test fun containsOperator() {
         val array = IntVMap<String>()
         assertFalse(1 in array)
-        array.put(1, "one")
+        array[1]="one"
         assertTrue(1 in array)
     }
 
     @Test fun containsOperatorWithItem() {
         val array = IntVMap<String>()
 
-        array.put(1, "one")
+        array[1]="one"
         assertFalse(2 in array)
 
-        array.put(2, "two")
+        array[2]="two"
         assertTrue(2 in array)
     }
 
     @Test fun setOperator() {
         val array = IntVMap<String>()
         array[1] = "one"
-        assertEquals("one", array.get(1))
+        assertEquals("one", array[1])
     }
 
     @Test fun plusOperator() {
@@ -71,7 +68,7 @@ class IntVMapTest {
         val array = IntVMap<Any>()
         val default = Any()
         assertSame(default, array.getOrDefault(1, default))
-        array.put(1, "one")
+        array[1]="one"
         assertEquals("one", array.getOrDefault(1, default))
     }
 
@@ -79,14 +76,14 @@ class IntVMapTest {
         val array = IntVMap<Any>()
         val default = Any()
         assertSame(default, array.getOrElse(1) { default })
-        array.put(1, "one")
-        //assertEquals("one", array.getOrElse(1) { fail() })
+        array[1]="one"
+        assertEquals("one", array.getOrElse(1) { fail() })
     }
 
     @Test fun isNotEmpty() {
         val array = IntVMap<String>()
         assertFalse(array.isNotEmpty())
-        array.put(1, "one")
+        array[1]="one"
         assertTrue(array.isNotEmpty())
     }
 
@@ -94,9 +91,9 @@ class IntVMapTest {
         val array = IntVMap<String>()
         assertFalse(array.entries.iterator().hasNext())
 
-        array.put(1, "one")
-        array.put(2, "two")
-        array.put(6, "six")
+        array[1]="one"
+        array[2]="two"
+        array[6]="six"
 
         val iterator = array.entries.iterator()
         assertTrue(iterator.hasNext())
@@ -105,7 +102,7 @@ class IntVMapTest {
         assertEquals("one", n1.value)
 
         n1.setValue("99")
-        assertEquals("99",array.get(1))
+        assertEquals("99", array[1])
         assertEquals("1=99",n1.toString())
         n1.setValue("one")
 
@@ -136,9 +133,9 @@ class IntVMapTest {
         val array = IntVMap<String>()
         assertFalse(array.entries.iterator().hasNext())
 
-        array.put(1, "one")
-        array.put(2, "two")
-        array.put(6, "six")
+        array[1]="one"
+        array[2]="two"
+        array[6]="six"
 
         val iterator = array.entries.iterator()
         assertTrue(iterator.hasNext())
@@ -171,9 +168,9 @@ class IntVMapTest {
         val array = IntVMap<String>()
         assertFalse(array.entries.iterator().hasNext())
 
-        array.put(1, "one")
-        array.put(2, "two")
-        array.put(6, "six")
+        array[1]="one"
+        array[2]="two"
+        array[6]="six"
 
         val iterator = array.entries.iterator()
         assertTrue(iterator.hasNext())
@@ -207,9 +204,9 @@ class IntVMapTest {
         val array = IntVMap<String>()
         assertFalse(array.keys.iterator().hasNext())
 
-        array.put(1, "one")
-        array.put(2, "two")
-        array.put(6, "six")
+        array[1]="one"
+        array[2]="two"
+        array[6]="six"
 
         val iterator = array.keys.iterator()
         assertTrue(iterator.hasNext())
@@ -233,9 +230,9 @@ class IntVMapTest {
         val array = IntVMap<String>()
         assertFalse(array.keys.iterator().hasNext())
 
-        array.put(1, "one")
-        array.put(2, "two")
-        array.put(6, "six")
+        array[1]="one"
+        array[2]="two"
+        array[6]="six"
 
         val iterator = array.keys.iterator()
         assertTrue(iterator.hasNext())
@@ -258,9 +255,9 @@ class IntVMapTest {
         val array = IntVMap<String>()
         assertFalse(array.keys.iterator().hasNext())
 
-        array.put(1, "one")
-        array.put(2, "two")
-        array.put(6, "six")
+        array[1]="one"
+        array[2]="two"
+        array[6]="six"
 
         val iterator = array.keys.iterator()
         assertTrue(iterator.hasNext())
@@ -284,9 +281,9 @@ class IntVMapTest {
         val array = IntVMap<String>()
         assertFalse(array.values.iterator().hasNext())
 
-        array.put(1, "one")
-        array.put(2, "two")
-        array.put(6, "six")
+        array[1]="one"
+        array[2]="two"
+        array[6]="six"
 
         val iterator = array.values.iterator()
         assertTrue(iterator.hasNext())
@@ -310,9 +307,9 @@ class IntVMapTest {
         val array = IntVMap<String>()
         assertFalse(array.values.iterator().hasNext())
 
-        array.put(1, "one")
-        array.put(2, "two")
-        array.put(6, "six")
+        array[1]="one"
+        array[2]="two"
+        array[6]="six"
 
         val iterator = array.values.iterator()
         assertTrue(iterator.hasNext())
@@ -335,9 +332,9 @@ class IntVMapTest {
         val array = IntVMap<String>()
         assertFalse(array.values.iterator().hasNext())
 
-        array.put(1, "one")
-        array.put(2, "two")
-        array.put(6, "six")
+        array[1]="one"
+        array[2]="two"
+        array[6]="six"
 
         val iterator = array.values.iterator()
         assertTrue(iterator.hasNext())

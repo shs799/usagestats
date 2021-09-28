@@ -3,75 +3,84 @@ package com.privacyFirst.usageStats.underconstruction
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.os.Build
-import com.privacyFirst.usageStats.staticlib.date.DateTrans
+import com.privacyFirst.usageStats.dymaticLib.slimOrFastestMap.MapDowngradeIntV
+import com.privacyFirst.usageStats.staticLib.date.DateTrans
+import java.util.concurrent.ConcurrentHashMap
 import java.util.stream.StreamSupport
+import kotlin.reflect.full.staticProperties
 
-class UsageEventClass {
+object UsageEventClass {
+
+    public val eventMap: Map<Int, String>
+        get() {
+            val c = UsageEvents.Event::class
+            val sp=c.staticProperties
+            val chm = ConcurrentHashMap<Int, String>(sp.count())
+                sp.parallelStream()
+                    .forEach { staticProperty ->
+                    var deprecated = false
+                    staticProperty.annotations
+                        .filter { annotations->annotations.annotationClass.simpleName == "Deprecated" }
+                        .forEach { deprecated = true }
+                    val k=staticProperty.get()
+
+                    if(k is Int)
+                        if(deprecated){
+                            chm.putIfAbsent(k,staticProperty.name)
+                        }else{
+                            chm[k] = staticProperty.name
+                        }
+                }
+            return MapDowngradeIntV(chm)
+        }
 
     fun a(usm: UsageStatsManager, b: Long, e: Long) {
         val qe = usm.queryEvents(b, e)
-        val iterator= Iterator(qe)
-        val iterable = Iterable { iterator }
-        val targetStream = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+        val iterator = EventIterator(qe)
+
+        val targetStream = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            val iterable = Iterable { iterator }
             StreamSupport.stream(iterable.spliterator(), true)
-         else {
-            val list=ArrayList<UsageEvents.Event>()
-            iterator.forEach { i-> list.add(i) }
-            list.parallelStream()
+        } else {
+            val list = ArrayList<UsageEvents.Event>()
+            iterator.forEach { i -> list.add(i) }
+            list.stream()
         }
-        targetStream.forEach { it->
+        targetStream.forEach { it ->
 
         }
     }
-    fun aEvent(event:UsageEvents.Event){
-        DateTrans.stamp(event.timeStamp)
-        event.className
-        val conf=event.configuration
-        conf.fontScale
-        conf.mcc
-        conf.mnc
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            conf.locales.toLanguageTags()
-        }else{
-            conf.locale.toLanguageTag()
-        }
-        conf.touchscreen
-        conf.keyboard
-        conf.keyboardHidden
-        conf.hardKeyboardHidden
-        conf.navigation
-        conf.navigationHidden
-        conf.orientation
-        conf.screenLayout
-        conf.uiMode
-        conf.screenWidthDp
-        conf.screenHeightDp
-        conf.smallestScreenWidthDp
-        conf.densityDpi
 
-        event.eventType
-        event.packageName
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
-            event.shortcutId
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            conf.colorMode
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            event.appStandbyBucket
-        }
+    fun eventToString(event: UsageEvents.Event): String {
+        val sb = StringBuilder()
+        sb.append("timeStamp: " + DateTrans.stamp(event.timeStamp) + "\n")
+        sb.append("className: " + event.className + "\n")
+        val eventType = event.eventType
+        sb.append("eventType: " + eventMap[eventType] + "\n")
+        sb.append("packageName: " + event.packageName + "\n")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1)
+            if (event.eventType == UsageEvents.Event.SHORTCUT_INVOCATION)
+                sb.append("eventType: " + event.shortcutId + "\n")
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+            if (event.eventType == UsageEvents.Event.STANDBY_BUCKET_CHANGED)
+                sb.append("eventType: " + event.appStandbyBucket + "\n")
+
+
+        ConfigurationClass.configurationToString(event.configuration)
+        return sb.toString()
     }
-
 
 }
 
-private class Iterator(private val usageEvents: UsageEvents) :
-    kotlin.collections.Iterator<UsageEvents.Event> {
-    override fun hasNext()=
+private class EventIterator(private val usageEvents: UsageEvents) :
+    Iterator<UsageEvents.Event> {
+    override fun hasNext() =
         usageEvents.hasNextEvent()
 
     override fun next(): UsageEvents.Event {
-        val event=UsageEvents.Event()
+        val event = UsageEvents.Event()
         usageEvents.getNextEvent(event)
         return event
     }

@@ -1,9 +1,10 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
+
 buildscript {
-    ext.kotlin_version = '1.5.30'
+    ext.kotlin_version = '1.5.31'
     ext.unmockplugin_version = '0.7.8'
-    ext.enable_canary = true
-    ext.enable_buildwithsourcecode = true
+    ext.enable_canary = false
+    ext.enable_buildwithsourcecode = false
     repositories {
         mavenLocal()
         //maven { url 'https://maven.aliyun.com/nexus/content/groups/public/' }

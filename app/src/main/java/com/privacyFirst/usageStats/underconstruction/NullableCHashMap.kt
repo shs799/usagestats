@@ -1,71 +1,50 @@
 package com.privacyFirst.usageStats.underconstruction
 
+
+import com.privacyFirst.usageStats.staticLib.concurrent.AtomicReferenceKT
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
-import java.util.concurrent.ConcurrentSkipListSet
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.atomic.AtomicReference
-import kotlin.concurrent.thread
 
-class NullableCHashMap<K, V> : MutableMap<K, V>,ConcurrentMap<K,V> {
+class NullableCHashMap<K, V> : ConcurrentMap<K, V> {
 
-    private val mapKN = ConcurrentSkipListSet<K>()
-    private val mapKV = ConcurrentHashMap<K, V>()
-    private val mapNV = AtomicReference<V>()
+    private val mapK = ConcurrentHashMap<K, MapNode<V>>()
+    private val mapN = AtomicReferenceKT<MapNode<V>?>()
 
 
     override val size: Int
-        get() {
-            val nullKeySize = if (mapNV.get() != null) 1 else 0
-            return mapKV.size + mapKN.size + nullKeySize
-        }
+        get() = mapK.size + if (mapN.get() != null) 1 else 0
+
 
 
     override fun containsKey(key: K): Boolean {
-        if (key == null)
-            return mapNV.get() == null
-        val a = CountDownLatch(1)//todo:Can be optimized
-        var found = false
-        val t1 = thread {
-            val nv = mapKV.containsKey(key)
-            if (nv) {
-                found = true
-                a.countDown()
-            }
+        if (key == null) {
+            if (mapN.get() != null) return true
+        } else {
+            if (mapK.containsKey(key)) return true
         }
-        val t2 = thread {
-            val contain = mapKN.contains(key)
-            if (contain) {
-                found = true
-                a.countDown()
-            }
-        }
-        t1.name = "finding in mapKV"
-        t2.name = "finding in mapKN"
-        t1.start()
-        t2.start()
-        a.await()
-        t1.priority=Thread.MIN_PRIORITY
-        t2.priority=Thread.MIN_PRIORITY
-        return found
+        return false
     }
 
     override fun containsValue(value: V): Boolean {
-        TODO("Not yet implemented")
-        if (value == null)
-            return mapNV.get() === value
-
+        val n = MapNode(value)
+        if (value == null) {
+            if (mapN.get() == n) return true
+        } else {
+            if (mapK.containsValue(n)) return true
+        }
+        return false
     }
 
     override fun get(key: K): V? {
-        if (key == null)
-            return mapNV.get()
-        return mapKV[key]
+        return if (key == null) mapN.get()?.v else mapK[key]?.v
     }
 
-    override fun isEmpty() =
-        size == 0
-
+    override fun isEmpty(): Boolean {
+        return when {
+            mapN.get() != null -> false
+            else -> mapK.isEmpty()
+        }
+    }
 
     override val entries: MutableSet<MutableMap.MutableEntry<K, V>>
         get() = TODO("Not yet implemented")
@@ -75,22 +54,17 @@ class NullableCHashMap<K, V> : MutableMap<K, V>,ConcurrentMap<K,V> {
         get() = TODO("Not yet implemented")
 
     override fun clear() {
-        mapKN.clear()
-        mapKV.clear()
-        mapNV.set(null)
+        mapK.clear()
+        mapN.set(null)
     }
 
     override fun put(key: K, value: V): V? {
-        TODO("Not yet implemented")
-        if (key == null)
-            return mapNV.getAndSet(value)
-        val resultMapKN=mapKN.contains(key)
-        val resultMapKV=mapKV.containsKey(key)
-        if(value==null){
-
-        }
-        else{
-
+        return if (key == null) {
+            val old = mapN.getAndSet(MapNode(value))
+            old?.v
+        } else {
+            val new = MapNode(value)
+            mapK.put(key, new)?.v
         }
     }
 
@@ -101,34 +75,7 @@ class NullableCHashMap<K, V> : MutableMap<K, V>,ConcurrentMap<K,V> {
     }
 
     override fun remove(key: K): V? {
-        if (key == null) {
-            val ret = mapNV.getAndSet(null)
-            return ret
-        }
-            val a = CountDownLatch(1)//todo:Can be optimized
-            var ret: V? = null
-            val t1 = thread {
-                val nv = mapKV.remove(key)
-                    ret = nv
-                    a.countDown()
-
-            }
-            val t2 = thread {
-                val success = mapKN.remove(key)
-                if (success) {
-                    ret = null
-                    a.countDown()
-                }
-            }
-
-        t1.name = "finding in mapKV"
-        t2.name = "finding in mapKN"
-        t1.start()
-        t2.start()
-        a.await()
-        t1.priority=Thread.MIN_PRIORITY
-        t2.priority=Thread.MIN_PRIORITY
-        return ret
+        TODO("Not yet implemented")
     }
 
     override fun remove(key: K, value: V): Boolean {
@@ -140,7 +87,13 @@ class NullableCHashMap<K, V> : MutableMap<K, V>,ConcurrentMap<K,V> {
     }
 
     override fun replace(key: K, oldValue: V, newValue: V): Boolean {
-        TODO("Not yet implemented")
+        return if (key == null) {
+            if (mapN.get() != null) {
+                mapN.set(MapNode(newValue))
+                true
+            } else false
+        } else mapK.replace(key, MapNode(oldValue), MapNode(newValue))
+
     }
 
     override fun replace(key: K, value: V): V? {
@@ -148,3 +101,8 @@ class NullableCHashMap<K, V> : MutableMap<K, V>,ConcurrentMap<K,V> {
     }
 }
 
+private class MapNode<V>(val v: V) {
+    override fun equals(other: Any?) = v == other
+    override fun hashCode() = v?.hashCode() ?: 0
+    override fun toString() = v.toString()
+}

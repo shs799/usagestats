@@ -1,24 +1,24 @@
 package com.privacyFirst.usageStats.underconstruction
 
 import androidx.collection.ArrayMap
+import com.privacyFirst.kotlin.infrastructure.lib.everywhere.collection.EmptyMutableMap
 import java.util.concurrent.ConcurrentHashMap
 
 class AutoSwitchMap<K, V> : Map<K, V> {
     constructor(m: MutableMap<K, V>) {
-        this.m = m
+        this.mm = mm
     }
 
     private var chm: ConcurrentHashMap<K, V>? = null
     private var hm: HashMap<K, V>? = null
     private var am: ArrayMap<K, V>? = null
-    private var m: Map<K, V> = emptyMap()
-    private var mm: MutableMap<K, V>? = null
+    private var mm: MutableMap<K, V>? = EmptyMutableMap()
 
     fun setMap(m: Map<K, V>) {
         val nchm = ConcurrentHashMap<K, V>(m.size)
         chm = nchm
         m.entries.parallelStream().forEach { i ->
-            nchm.put(i.key, i.value)
+            //nchm.put(i.key, i.value)
             TODO("need a nullable ConcurrentHashMap")
         }
     }
